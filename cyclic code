@@ -1,0 +1,114 @@
+clc ;
+clear ;
+close;
+k = 4; // information message Length
+n = 7; // Codeword Length
+// Generator polynomial
+x= poly(0,'x');
+GenPoly =1+ x + x ^3;
+disp(GenPoly , ' The Generator polynomial ' ) ;
+// Generating RandomMessage
+// All M = all 16 posibilities for information message matrix
+All_M = [0 0 0 0;0 0 0 1;0 0 1 0;0 0 1 1;
+0 1 0 0;0 1 0 1;0 1 1 0;0 1 1 1;
+1 0 0 0;1 0 0 1;1 0 1 0;1 0 1 1;
+1 1 0 0;1 1 0 1;1 1 1 0;1 1 1 1];
+RandMessage = modulo ( round (16* rand () ) ,16) +1; //Get random number between 1 to 16
+M = All_M ( RandMessage ,:); // select a random row from Message matrix All M as information message
+disp(M ,'information message');
+//Message Polynomial
+MesPoly =( M (1) *1) + ( M (2) *( x ^1) ) + (M (3) *( x ^2) ) + ( M(4) *( x ^3) ) ;
+disp( MesPoly ,'Message Polynomial u ( x )') ;
+// Encoding
+// Generating Codeword Polynomial
+p =( x ^( n - k ) ) *( MesPoly ) ; // Step 1 − multiply MesPoly byx ˆ ( n−k ) , [ x ˆ ( n−k ) ∗u ( x ) ]
+[ RemPoly , q ]= pdiv (p , GenPoly ) ; // Step 2 − divide above product by GenPoly , g ( x ) ( Polynomial Division )
+// RemPoly = modulo ( RemPoly ,2) ; // Convert Remainder Polynomial to binary to binary parity check Polynomial , b ( x )
+disp( RemPoly ,' Remainder Polynomial b ( x )');
+CodePoly = RemPoly +( MesPoly *( x ^( n - k ) ) ) ; // Step 3 − add ( x ˆ ( n−k ) ∗u ( x ) ) and b ( x ) to binary Codeword Polynomial
+disp( CodePoly ,' Codeword Polynomial c ( x )');
+// Finding Coefficients of Codeword Polynomial
+CodePolyCoeff = coeff ( CodePoly ) ;
+// Removal of − signs from Coefficients of Codeword Polynomial
+for i =1: length ( CodePolyCoeff )
+if ( CodePolyCoeff ( i ) == -1) then
+CodePolyCoeff ( i ) =1;
+end
+end
+disp( CodePolyCoeff ,' Coefficients of Codeword Polynomial');
+// Generating 7 bit Codeword from Coefficients of Codeword Polynomial
+C = CodePolyCoeff ;
+if length (C ) <7 then
+C (1 ,7) =0; // Assigning a value outside array dimension will automatically
+// pad additional zeros to resize the array / vector
+end
+disp(C ,' Generated Codeword') ;
+// Transmition
+R = C; // Create recieved code word
+// Generate error at random bit position
+ErrPos = modulo ( round (8* rand () ) ,8); //Get random number between 0 to 7
+// ErrPos=0 // for testing
+if ErrPos ==0 then
+//Do nothing , as ’ 0 ’ means no error
+else
+if R ( ErrPos ) ==0 then
+R ( ErrPos ) =1 ;// Invert bit at Erroneous Bit Position
+else
+R ( ErrPos ) =0; // Invert bit at Erroneous Bit Position
+end
+end
+// Reception and Decoding
+disp(R ,' Recieved Code word R');
+// Received Polynomial
+RecPoly =( R (1) *1) + ( R (2) *( x ^1) ) + (R (3) *( x ^2) ) + ( R(4) *( x ^3) ) + ( R (5) *( x ^4) ) + ( R (6) *( x^5) ) + ( R (7)*( x ^6) ) ;
+disp( RecPoly ,'Received Polynomial u ( x )');
+// Syndrome polynomial
+[ SynPoly , q ]= pdiv ( RecPoly , GenPoly ) ;
+SynPoly = modulo ( SynPoly ,2);
+disp( SynPoly ,'Syndrome Polynomial');
+// Finding Coefficients of Syndrome Polynomial
+SynPolyCoeff = coeff ( SynPoly ) ;
+// Removal of − signs from Coefficients of Syndrome Polynomial
+for i =1: length ( SynPolyCoeff )
+if ( SynPolyCoeff ( i ) == -1) then
+SynPolyCoeff ( i ) =1;
+end
+end
+disp( SynPolyCoeff ,'Coefficients of Syndrome Polynomial');
+// Generating 3 bit Syndrome from Coefficients of Syndrome Polynomial
+if length ( SynPolyCoeff ) <3 then
+SynPolyCoeff (1 ,3) =0; // Assigning a value outside array dimension will automatically
+// pad additional zeros to resize the array / vector
+end
+disp( SynPolyCoeff ,'Syndrome');
+// Create H ( parity check matrix ) a s error look uptable
+P = [1 1 0;0 1 1 ;1 1 1;1 0 1] // parity matrix
+H =[eye(n -k ,n - k ); P]'; // parity Check matrix
+// disp (H, ’ parity Check matrix H’ ) // for testing
+if SynPolyCoeff ==[0 0 0] then // [ 0 0 0 ] indicates no error
+disp(R ,'Recieved Code with o u t error');
+disp( R (4:7) ,'Recieved information message');//Extract and display Message from code word
+else
+// Find erroneous bit position
+// He re we find colomn within H matrix with pattern simmilar to Syndrome matrix
+//The position number of that colomn is equivalent to erroneous bit position
+ ErrPos =1; // Initilaize erroneous bit position
+d=[H( : ,ErrPos)]'; // Transpose of first coloumn of H matrix
+// ( Transpose is used to convert colomn to row as syndrome is in row format )
+while(( d(1) ~=SynPolyCoeff (1)) |(d(2) ~=SynPolyCoeff (2)) |(d(3)~=SynPolyCoeff(3)))
+// Check condition wise i n e q u all i t y for any condition (OR condition )
+ErrPos = ErrPos +1; // Increament erroneous bit position ( Point to next colomn )
+d=[H( : ,ErrPos)]; // Transpose of next coloumn of H matrix
+end
+disp(ErrPos ,'erroneous Bi t position');
+// error correction
+if R ( ErrPos ) ==0 then
+R ( ErrPos ) =1 // Invert bit at Erroneous Bit Position
+else
+R ( ErrPos ) =0 // Invert bit at Erroneous Bit Position
+end
+disp(R ,' Recieved Code with error corrected');
+disp( R (4:7) ,' Recieved information message');
+// Extract and display Message from code word
+end
+disp(M ,'information message M that was sent');
