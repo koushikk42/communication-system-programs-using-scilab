@@ -1,0 +1,54 @@
+clc;
+clear all;
+close;
+T=1;
+b=[1 0 1 0 1]
+N=5;
+NRZ_out=[];
+RZ_out=[];
+Manchester_out=[];
+Vp=1;
+for index=1:size(b,2)
+if b(index)==1
+NRZ_out=[NRZ_out ones(1,200)*Vp];
+elseif b(index)==0
+NRZ_out=[NRZ_out ones(1,200)*(-Vp)];
+end
+end
+subplot(5,1,1);
+plot2d2(b);
+xlabel('Time (seconds)-->')
+ylabel('Amplitude (volts)-->')
+title('Impulses of bits to be transmitted');
+subplot(5,1,2);
+plot2d2(NRZ_out);
+xlabel('Time (seconds)-->');
+ylabel('Amplitude (volts)-->');
+title('Generated NRZ signal');
+t=0.005:0.005:5;
+f=5;
+Modulated=NRZ_out.*(cos(2*3.14*f*t));
+subplot(5,1,3);
+plot(Modulated);
+xlabel('Time (seconds)-->');
+ylabel('Amplitude (volts)-->');
+title('BPSK Modulated signal');
+y=[];
+carrier=cos(2*3.14*f*t);
+demodulated=Modulated.*(cos(2*3.14*f*t));
+for i=1:200:size(demodulated,2)
+y=[y inttrap(t(i:i+199),demodulated(i:i+199))];
+end
+t=0.005:0.005:5;
+for j=1:length(t)
+if(demodulated(j)>0)
+y(j)=1;
+else
+y(j)=0;
+end;
+end;
+subplot(5,1,4);
+plot2d2(y);
+title('Impulses of Received bits');
+xlabel('Time (seconds)-->');
+ylabel('Amplitude (volts)');
