@@ -1,0 +1,34 @@
+clc;
+close;
+//Note : Please run the xor new . sci dependency f i l e before executing this program
+//Note : Don ’ t run the clear command after running the dependency ( xor new . sci ) as it contains the required funtion which will be cleared by the clear command
+bk = [1,0,1,1,0,1,1,1];// input d i g i t a l sequence
+for i = 1:length(bk)
+if(bk(i)==1)
+bk_not(i) =~1;
+else
+bk_not(i)= 1;
+end
+end
+dk_1(1) = 1&bk(1); // i n i t i a l value of d i f f e r e n t i a l encoded sequence
+dk_1_not(1)=0&bk_not(1);
+dk(1) = xor_new(dk_1(1),dk_1_not(1))// f i r s t bit of dpsk encoder
+for i=2:length(bk)
+dk_1(i) = dk(i-1);
+dk_1_not(i) = ~dk(i-1);
+dk(i) = xor_new((dk_1(i)&bk(i)),(dk_1_not(i)&bk_not(i)));
+end
+for i =1:length(dk)
+if(dk(i)==1)
+dk_radians(i)=0;
+elseif(dk(i)==0)
+dk_radians(i)=%pi;
+end
+end
+disp(bk,'bk')
+//bk_not = bk_not’;
+disp(bk_not , 'bknot')
+//dk = dk’;
+disp(dk,'Differentially encoded sequence dk')
+//dk_radians = dk_radians’;
+disp(dk_radians ,'transmitted phase in radians')
